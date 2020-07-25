@@ -6,22 +6,22 @@ class Menu(QMenu):
 
     def __init__(self):
         super(Menu, self).__init__()
-        self.current_song_action = QAction('Toggle - Wallpaper to Current Song Art')
+        self.toggle_wallpaper_action = QAction('Toggle - Wallpaper to Current Song Art')
         self.login_info_action = QAction('Login to Spotify')
         self.quit_action = QAction('Quit')
 
-        self.setup_current_song_action()
+        self.setup_toggle_wallpaper_action()
         self.addSeparator()
         self.setup_login_info_action()
         self.setup_quit_action()
 
-    def setup_current_song_action(self):
+    def setup_toggle_wallpaper_action(self):
         """sets up the Toggle - Current Song option"""
 
-        self.current_song_action.setCheckable(True)
-        self.current_song_action.checked = False
-        self.current_song_action.setEnabled(False)
-        self.addAction(self.current_song_action)
+        self.toggle_wallpaper_action.setCheckable(True)
+        self.toggle_wallpaper_action.checked = False
+        self.toggle_wallpaper_action.setEnabled(False)
+        self.addAction(self.toggle_wallpaper_action)
 
     def setup_login_info_action(self):
         """sets up the Login option"""

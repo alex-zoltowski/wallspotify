@@ -1,7 +1,3 @@
-"""
-<placeholder>
-"""
-
 from time import sleep
 from threading import Thread
 from os.path import abspath, join, expanduser, exists
@@ -24,32 +20,32 @@ import ctypes
 import sys
 import spotify_config
 
+
 FOLDER = join(expanduser('~'), '.wallspotify')
-IMG_PATH = join(FOLDER, "background.jpeg")
+IMG_PATH = join(FOLDER, 'background.jpeg')
 
-# defines the permissions that are used to get spotify user data
-scope = 'user-read-currently-playing'
-
-# Create ouath object to handle token data
-sp_oauth = oauth2.SpotifyOAuth(spotify_config.client_id,
+# Create ouath object to handle cached token data
+SCOPE = 'user-read-currently-playing'
+SP_OAUTH = oauth2.SpotifyOAuth(spotify_config.client_id,
                                spotify_config.client_secret,
                                spotify_config.redirect_uri,
-                               scope=scope,
+                               scope=SCOPE,
                                cache_path=join(FOLDER, 'spotifycache'))
 
 
 class Application(QApplication):
-    """this class configures our application"""
 
     def __init__(self):
         super(Application, self).__init__([])
         self.setQuitOnLastWindowClosed(False)
 
-        # Create the menu, connect funtions to the app's buttons
+        self.wallpaper_thread = None
+
+        # Create the menu, connect class functions to the app's buttons
         self.menu = Menu()
-        self.menu.login_info_action.triggered.connect(self.token_prompt)
-        self.menu.current_song_action.triggered.connect(self.wallpaper_to_current_song)
-        self.menu.quit_action.triggered.connect(self.quit_application)
+        self.menu.login_info_action.triggered.connect(self._on_login_button)
+        self.menu.toggle_wallpaper_action.triggered.connect(self._on_toggle_wallpaper_button)
+        self.menu.quit_action.triggered.connect(self._on_quit_button)
 
         # Create the tray and make it visible
         self.tray = QSystemTrayIcon()
@@ -59,55 +55,46 @@ class Application(QApplication):
 
         # Create confirm account frame
         self.confirm_account_window = ConfirmAccountWindow()
-        self.confirm_account_window.form_widget.button.clicked.connect(self.confirm_account_button_click)
+        self.confirm_account_window.form_widget.button.clicked.connect(self._on_confirm_account_button)
 
-        self.begin_login()
+        # Attempt login with cache
+        self._attempt_login()
 
-    def begin_login(self):
-        """try to get a token from cache - if it doesn't exist, prompt user for token"""
+    def _attempt_login(self, code=None):
+        """attempts to get token from cache if a code is not supplied"""
 
-        cached_token_info = sp_oauth.get_cached_token()
-        if cached_token_info:
-            print('token found')
-            login_response = login(cached_token_info)
-            if login_response:
-                self.update_login_ui(login_response)
+        if code:
+            # Get access token from Spotify
+            try:
+                token_info = SP_OAUTH.get_access_token(code)
+            except oauth2.SpotifyOauthError:
+                # todo: show message box saying it failed
+                print('could not get access token from Spotify')
+                return
         else:
-            print('token not found, opening token prompt')
-            self.token_prompt()
+            # Get token from cache
+            token_info = SP_OAUTH.get_cached_token()
+            if not token_info:
+                return
 
-    def update_login_ui(self, text):
+        # Login with token
+        login_response = login(token_info)
+
+        if login_response:
+            self._update_login_ui(login_response)
+            self.confirm_account_window.hide()
+        else:
+            print('login with token failed')
+            # todo: show user login failed
+
+    def _update_login_ui(self, text):
+        """changes tray UI to reflect a successful login"""
+
         self.menu.login_info_action.setText(text)
-        self.menu.current_song_action.setEnabled(True)
+        self.menu.toggle_wallpaper_action.setEnabled(True)
         self.menu.login_info_action.setEnabled(False)
 
-    def token_prompt(self):
-        """prompts user to input the callback url"""
-
-        if not self.confirm_account_window.isVisible():
-            self.confirm_account_window.show()
-            auth_url = sp_oauth.get_authorize_url()
-            try:
-                open_webbrowser(auth_url)
-            except:
-                # todo: add a message box to give the user the auth url
-                print('could not open token prompt')
-
-    def wallpaper_to_current_song(self):
-        """this toggles the wallpaper to current song option"""
-
-        # check if the current song option was already selected
-        if self.menu.current_song_action.checked:
-            # stop the current song thread
-            self.menu.current_song_action.checked = False
-            self.wallpaper_thread.stop()
-        else:
-            # start a new current song thread
-            self.menu.current_song_action.checked = True
-            self.wallpaper_thread = ChangeWallpaperThread()
-            self.wallpaper_thread.start()
-
-    def confirm_account_button_click(self):
+    def _on_confirm_account_button(self):
         """defines behavior for button press"""
 
         # create regex for a valid url
@@ -120,9 +107,9 @@ class Application(QApplication):
         # get the contents of the text field
         text = self.confirm_account_window.form_widget.text_field.text()
 
-        # check for valid url
+        # check if text is a valid url
         if match(regex, text):
-            code = sp_oauth.parse_response_code(text)
+            code = SP_OAUTH.parse_response_code(text)
 
             if not code:
                 print('could not parse response code')
@@ -133,27 +120,39 @@ class Application(QApplication):
             # todo: not a valid url, 'make sure it starts with https://'
             return
 
-        # hide the window
-        self.confirm_account_window.hide()
+        # Clear text field
+        self.confirm_account_window.form_widget.text_field.setText("")
 
-        # get access token from Spotify
-        try:
-            token_info = sp_oauth.get_access_token(code)
-        except:
-            # todo: show message box saying it failed
-            print('could not get access token from spotify')
-            return
+        # Attempt login using code
+        self._attempt_login(code)
 
-        # if token info exists, login
-        if token_info:
-            login_response = login(token_info)
-            if login_response:
-                self.update_login_ui(login_response)
+    def _on_login_button(self):
+        """tries to open users web browser to prompt Spotify login, also shows window for callback url"""
+
+        if not self.confirm_account_window.isVisible():
+            self.confirm_account_window.show()
+            auth_url = SP_OAUTH.get_authorize_url()
+            try:
+                open_webbrowser(auth_url)
+            except:
+                # todo: show a prompt to give the user the auth url
+                print('could not open web browser')
+
+    def _on_toggle_wallpaper_button(self):
+        """this toggles the wallpaper to current song option"""
+
+        # check if the current song option was already selected
+        if self.menu.toggle_wallpaper_action.checked:
+            # stop the current song thread
+            self.menu.toggle_wallpaper_action.checked = False
+            self.wallpaper_thread.stop()
         else:
-            # todo: show message box saying it failed
-            pass
+            # start a new current song thread
+            self.menu.toggle_wallpaper_action.checked = True
+            self.wallpaper_thread = ChangeWallpaperThread()
+            self.wallpaper_thread.start()
 
-    def quit_application(self):
+    def _on_quit_button(self):
         """stops any threads then quits the application"""
 
         try:
