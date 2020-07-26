@@ -3,4 +3,4 @@ dist/
 __pycache__/
 .idea/
 .DS_Store
-spotify_config.py
+src/spotify_config.py

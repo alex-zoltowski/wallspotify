@@ -1,12 +1,15 @@
 # -*- mode: python ; coding: utf-8 -*-
+from os.path import join, abspath
+
 
 block_cipher = None
 
+dir_path = abspath('.')
 
-a = Analysis(['wallspotify-windows.py'],
-             pathex=['Z:\\Dev\\wallspotify'],
+a = Analysis([join(dir_path, 'wallspotify-windows.py')],
+             pathex=[dir_path],
              binaries=[],
-             datas=[('assets\\icon.png', '.\\assets')],
+             datas=[(join(dir_path, 'assets\\icon.png'), '.\\assets')],
              hiddenimports=[],
              hookspath=[],
              runtime_hooks=[],
@@ -30,4 +33,4 @@ exe = EXE(pyz,
           upx=True,
           upx_exclude=[],
           runtime_tmpdir=None,
-          console=False )
+          console=True )

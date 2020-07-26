@@ -506,7 +506,7 @@ def resource_path(relative_path):
     try:
         base_path = sys._MEIPASS
     except:
-        base_path = abspath('.')
+        base_path = abspath('')
 
     return join(base_path, relative_path)
 
@@ -532,7 +532,7 @@ def delete_jpegs():
     try:
         path = sys._MEIPASS
     except:
-        path = '.'
+        path = ''
 
     for item in listdir(path):
         if item.endswith('.jpeg'):

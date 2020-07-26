@@ -1,7 +1,7 @@
 from time import sleep
 from threading import Thread
 from os.path import abspath, join, expanduser, exists
-from os import makedirs
+from os import makedirs, listdir
 from ssl import _create_unverified_context
 from urllib.request import urlopen
 from webbrowser import open as open_webbrowser
@@ -10,27 +10,27 @@ from re import match, compile, IGNORECASE
 from PIL import Image
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QSystemTrayIcon
-from spotipy import Spotify, oauth2
+from src.spotify import Spotify
+from src.oauth2 import SpotifyOAuth, SpotifyOauthError
 from math import sqrt
 from winreg import OpenKey, CloseKey, QueryValueEx, SetValueEx, ConnectRegistry, \
     HKEY_CURRENT_USER, REG_SZ, KEY_ALL_ACCESS
-from menu import Menu
-from confirm_account_window import ConfirmAccountWindow
+from src.menu import Menu
+from src.confirm_account_window import ConfirmAccountWindow
 import ctypes
 import sys
-import spotify_config
-
+from src import spotify_config
 
 FOLDER = join(expanduser('~'), '.wallspotify')
 IMG_PATH = join(FOLDER, 'background.jpeg')
 
 # Create ouath object to handle cached token data
 SCOPE = 'user-read-currently-playing'
-SP_OAUTH = oauth2.SpotifyOAuth(spotify_config.client_id,
-                               spotify_config.client_secret,
-                               spotify_config.redirect_uri,
-                               scope=SCOPE,
-                               cache_path=join(FOLDER, 'spotifycache'))
+SP_OAUTH = SpotifyOAuth(spotify_config.client_id,
+                        spotify_config.client_secret,
+                        spotify_config.redirect_uri,
+                        scope=SCOPE,
+                        cache_path=join(FOLDER, 'spotifycache'))
 
 
 class Application(QApplication):
@@ -67,7 +67,7 @@ class Application(QApplication):
             # Get access token from Spotify
             try:
                 token_info = SP_OAUTH.get_access_token(code)
-            except oauth2.SpotifyOauthError:
+            except SpotifyOauthError:
                 # todo: show message box saying it failed
                 print('could not get access token from Spotify')
                 return
@@ -220,14 +220,14 @@ def login(token_info):
     """creates the spotify object, logs user into their account with given token"""
 
     try:
-        global spotify
-        spotify = Spotify(auth=token_info['access_token'])
+        global spot
+        spot = Spotify(auth=token_info['access_token'])
     except:
         print('could not connect to spotify with given token, exiting...')
         # todo: add message box saying couldn't connect to spotify
 
     try:
-        current_user_info = spotify.current_user()
+        current_user_info = spot.me()
         text = f'{current_user_info["display_name"]} - Logged into Spotify'
         return text
     except:
@@ -284,7 +284,7 @@ def get_current_song_image_url():
 
     # call to spotify for current song info
     try:
-        current_song = spotify.current_user_playing_track()
+        current_song = spot.current_user_playing_track()
     except:
         print('failed current song request')
         return None
@@ -448,7 +448,7 @@ def resource_path(relative_path):
     try:
         base_path = sys._MEIPASS
     except:
-        base_path = abspath('.')
+        base_path = abspath('')
 
     return join(base_path, relative_path)
 
@@ -474,9 +474,28 @@ def handle_windows_startup():
     CloseKey(key)
 
 
+def cleanup_mei():
+    """
+    Rudimentary workaround for https://github.com/pyinstaller/pyinstaller/issues/2379
+    """
+    from shutil import rmtree
+
+    mei_bundle = getattr(sys, "_MEIPASS", False)
+
+    if mei_bundle:
+        dir_mei, current_mei = mei_bundle.split("_MEI")
+        for file in listdir(dir_mei):
+            if file.startswith("_MEI") and not file.endswith(current_mei):
+                try:
+                    rmtree(join(dir_mei, file))
+                except PermissionError:
+                    pass
+
+
 def main():
     if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
         handle_windows_startup()
+        cleanup_mei()
 
     if exists(FOLDER):
         if exists(IMG_PATH):
