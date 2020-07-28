@@ -145,7 +145,7 @@ class Spotify(object):
                 retries -= 1
                 status = e.http_status
                 # 429 means we hit a rate limit, backoff
-                if status == 429 or (status >= 500 and status < 600):
+                if status == 429 or (500 <= status < 600):
                     if retries < 0:
                         raise
                     else:
