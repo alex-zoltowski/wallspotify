@@ -1,4 +1,7 @@
 from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton
+from src.util import resource_path
+from os.path import join
+from PyQt5.QtGui import QIcon
 
 
 class ConfirmAccountWindow(QMainWindow):
@@ -8,6 +11,7 @@ class ConfirmAccountWindow(QMainWindow):
         super(ConfirmAccountWindow, self).__init__()
         self.form_widget = ConfirmAccountWidget(self)
         self.setCentralWidget(self.form_widget)
+        self.setWindowIcon(QIcon(resource_path(join('assets', 'icon.png'))))
 
 
 class ConfirmAccountWidget(QWidget):

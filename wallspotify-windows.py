@@ -4,6 +4,7 @@ from webbrowser import open as open_webbrowser
 from re import match, compile, IGNORECASE
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QSystemTrayIcon
+from win10toast import ToastNotifier
 from src.oauth2 import SpotifyOAuth, SpotifyOauthError
 from src.menu import Menu
 from src.confirm_account_window import ConfirmAccountWindow
@@ -28,6 +29,9 @@ class Application(QApplication):
                                      spotify_config.redirect_uri,
                                      scope='user-read-currently-playing',
                                      cache_path=join(FOLDER, 'spotifycache'))
+
+        # Create Windows 10 notifications object
+        self.notifier = ToastNotifier()
 
         # Create the menu, connect class functions to the app's buttons
         self.menu = Menu()
@@ -56,13 +60,15 @@ class Application(QApplication):
             try:
                 token_info = self.sp_oauth.get_access_token(code)
             except SpotifyOauthError:
-                # todo: show message box saying it failed
+                self._notify_bad_link()
                 print('could not get access token from Spotify')
                 return
         else:
             # Get token from cache
             token_info = self.sp_oauth.get_cached_token()
             if not token_info:
+                self._show_notification('Not Logged In',
+                                        'Right-Click the WallSpotify icon to login to your Spotify account.')
                 return
 
         # Login with token
@@ -70,10 +76,11 @@ class Application(QApplication):
 
         if self.spotify:
             self._update_login_ui()
-            self.confirm_account_window.hide()
+            self._show_notification('Login Success', 'You can now use WallSpotify.')
         else:
+            self._show_notification('Login Failed',
+                                    'Something went wrong, try logging in again.')
             print('login with token failed')
-            # todo: show user login failed
 
     def _update_login_ui(self):
         """changes tray UI to reflect a successful login"""
@@ -107,16 +114,16 @@ class Application(QApplication):
             code = self.sp_oauth.parse_response_code(text)
 
             if not code:
+                self._notify_bad_link()
                 print('could not parse response code')
-                # todo: not a valid url
                 return
         else:
+            self._notify_bad_link()
             print('invalid url')
-            # todo: not a valid url, 'make sure it starts with https://'
             return
 
-        # Clear text field
-        self.confirm_account_window.form_widget.text_field.setText("")
+        # Close text field
+        self.confirm_account_window.hide()
 
         # Attempt login using code
         self._attempt_login(code)
@@ -147,11 +154,11 @@ class Application(QApplication):
             self._start_new_thread()
 
     def _on_quit_button(self):
-        """stops any threads then quits the application"""
+        """stops thread then quits the application"""
 
         try:
             self.wallpaper_thread.stop()
-        except:
+        except AttributeError:
             pass
 
         self.quit()
@@ -164,9 +171,19 @@ class Application(QApplication):
         self.wallpaper_thread.path = IMG_PATH
         self.wallpaper_thread.start()
 
+    def _show_notification(self, title, body):
+        self.notifier.show_toast(title,
+                                 body,
+                                 icon_path=resource_path(join('assets', 'icon.ico')),
+                                 duration=4,
+                                 threaded=True)
+
+    def _notify_bad_link(self):
+        self._show_notification('Login Failed',
+                                'Something is wrong with the link, be sure to copy and paste the entire link.')
+
 
 def main():
-
     # Check if it's running as an executable
     if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
         handle_windows_reg_key()
@@ -180,7 +197,7 @@ def main():
         # Create hidden folder in home directory to store cache and background image
         makedirs(FOLDER)
 
-    # Create and start app
+    # Create and start application
     app = Application()
     app.exec_()
 

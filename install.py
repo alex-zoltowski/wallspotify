@@ -7,7 +7,7 @@ _all_ = [
     "pyinstaller>=3.6",
 ]
 
-windows = []
+windows = ["win10toast>=0.9"]
 
 linux = []
 
