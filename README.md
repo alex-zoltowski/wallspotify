@@ -4,4 +4,4 @@ Install dependencies:
 
 Build executable:
 
-`pyinstaller --onefile wallspotify-windows.spec`
+`python build_executable.py`

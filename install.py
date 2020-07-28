@@ -11,11 +11,13 @@ windows = ["win10toast>=0.9"]
 
 linux = []
 
-darwin = ["appscript>=1.1.0",]
+darwin = ["appscript>=1.1.0"]
+
 
 def install(packages):
     for package in packages:
         pip.main(['install', package])
+
 
 if __name__ == '__main__':
 
