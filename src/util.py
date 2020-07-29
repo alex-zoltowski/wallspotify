@@ -1,6 +1,4 @@
-from winreg import OpenKey, CloseKey, QueryValueEx, SetValueEx, ConnectRegistry, \
-    HKEY_CURRENT_USER, REG_SZ, KEY_ALL_ACCESS
-from os import listdir
+from os import listdir, remove
 from os.path import abspath, join
 from math import sqrt
 from src.spotify import Spotify
@@ -10,7 +8,7 @@ from io import BytesIO
 from PIL import Image
 from time import sleep
 from threading import Thread
-import ctypes
+from datetime import datetime
 import sys
 
 
@@ -54,12 +52,17 @@ class ChangeWallpaperThread(Thread):
         previous_song = ''
 
         while self.running:
+            # get unique filename
+            file_name = datetime.now().strftime('%Y%m%d%H%M%S') + '.jpeg'
+            file_path = join(self.path, file_name)
+
             # try to update wallpaper
-            song_url = change_wallpaper(previous_song, self.spotify, self.path)
+            song_url = change_wallpaper(previous_song, self.spotify, file_path)
 
             # check for new song, save to previous_song
             if song_url:
                 previous_song = song_url
+                delete_old_jpegs(self.path, file_name)
 
             self._smart_sleep(5)
 
@@ -86,6 +89,9 @@ def handle_windows_reg_key():
     checks for value in registry, creates one if it doesn't exist
     will update key with new location of .exe if it was moved
     """
+
+    from winreg import OpenKey, CloseKey, QueryValueEx, SetValueEx, ConnectRegistry, \
+        HKEY_CURRENT_USER, REG_SZ, KEY_ALL_ACCESS
 
     name = 'wallspotify'
     path = sys.executable
@@ -334,9 +340,23 @@ def set_wallpaper_image(path):
     """
 
     try:
-        ctypes.windll.user32.SystemParametersInfoW(20, 0, path, 0)
+        if sys.platform == 'windows':
+            import ctypes
+
+            ctypes.windll.user32.SystemParametersInfoW(20, 0, path, 0)
+        else:
+            from appscript import app, mactypes
+            app('Finder').desktop_picture.set(mactypes.File(path))
     except:
         print('could not set bg image')
         return False
 
     return True
+
+
+def delete_old_jpegs(path, file_name):
+    """deletes any '.jpeg' files that were created"""
+
+    for item in listdir(path):
+        if item.endswith('.jpeg') and item != file_name:
+            remove(join(path, item))

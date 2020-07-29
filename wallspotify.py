@@ -1,10 +1,9 @@
 from os.path import expanduser, exists
-from os import makedirs
+from os import makedirs, system
 from webbrowser import open as open_webbrowser
 from re import match, compile, IGNORECASE
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QSystemTrayIcon
-from win10toast import ToastNotifier
 from src.oauth2 import SpotifyOAuth, SpotifyOauthError
 from src.menu import Menu
 from src.confirm_account_window import ConfirmAccountWindow
@@ -12,9 +11,12 @@ from src import spotify_config
 from src.util import *
 import sys
 
+IS_WINDOWS = sys.platform == 'windows'
+if IS_WINDOWS:
+    from win10toast import ToastNotifier
+    NOTIFIER = ToastNotifier()
 
-FOLDER = join(expanduser('~'), '.wallspotify')
-IMG_PATH = join(FOLDER, 'background.jpeg')
+FOLDER_PATH = join(expanduser('~'), '.wallspotify')
 
 
 class Application(QApplication):
@@ -28,10 +30,7 @@ class Application(QApplication):
                                      spotify_config.client_secret,
                                      spotify_config.redirect_uri,
                                      scope='user-read-currently-playing',
-                                     cache_path=join(FOLDER, 'spotifycache'))
-
-        # Create Windows 10 notifications object
-        self.notifier = ToastNotifier()
+                                     cache_path=join(FOLDER_PATH, 'spotifycache'))
 
         # Create the menu, connect class functions to the app's buttons
         self.menu = Menu()
@@ -168,15 +167,20 @@ class Application(QApplication):
 
         self.wallpaper_thread = ChangeWallpaperThread()
         self.wallpaper_thread.spotify = self.spotify
-        self.wallpaper_thread.path = IMG_PATH
+        self.wallpaper_thread.path = FOLDER_PATH
         self.wallpaper_thread.start()
 
     def _show_notification(self, title, body):
-        self.notifier.show_toast(title,
-                                 body,
-                                 icon_path=resource_path(join('assets', 'icon.ico')),
-                                 duration=4,
-                                 threaded=True)
+        if IS_WINDOWS:
+            NOTIFIER.show_toast(title,
+                                body,
+                                icon_path=resource_path(join('assets', 'icon.ico')),
+                                duration=4,
+                                threaded=True)
+        else:
+            system("""
+                          osascript -e 'display notification "{}" with title "{}"'
+                          """.format(body, title))
 
     def _notify_bad_link(self):
         self._show_notification('Login Failed',
@@ -186,16 +190,20 @@ class Application(QApplication):
 def main():
     # Check if it's running as an executable
     if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-        handle_windows_reg_key()
         cleanup_mei()
 
-    if exists(FOLDER):
-        if exists(IMG_PATH):
-            # Set wallpaper image if it exists
-            set_wallpaper_image(IMG_PATH)
+        if IS_WINDOWS:
+            handle_windows_reg_key()
+
+    if exists(FOLDER_PATH):
+        for item in listdir(FOLDER_PATH):
+            if item.endswith('.jpeg'):
+                # Set wallpaper image if it exists
+                set_wallpaper_image(join(FOLDER_PATH, item))
+                break
     else:
         # Create hidden folder in home directory to store cache and background image
-        makedirs(FOLDER)
+        makedirs(FOLDER_PATH)
 
     # Create and start application
     app = Application()
