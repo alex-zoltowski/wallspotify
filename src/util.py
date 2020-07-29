@@ -340,12 +340,13 @@ def set_wallpaper_image(path):
     """
 
     try:
-        if sys.platform == 'windows':
+        if sys.platform == 'win32':
             import ctypes
 
             ctypes.windll.user32.SystemParametersInfoW(20, 0, path, 0)
         else:
             from appscript import app, mactypes
+
             app('Finder').desktop_picture.set(mactypes.File(path))
     except:
         print('could not set bg image')

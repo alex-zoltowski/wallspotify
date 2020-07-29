@@ -1,4 +1,5 @@
-import pip
+import subprocess
+import sys
 
 _all_ = [
     "PyQt5>=5.12.2",
@@ -16,7 +17,7 @@ darwin = ["appscript>=1.1.0"]
 
 def install(packages):
     for package in packages:
-        pip.main(['install', package])
+        subprocess.check_call([sys.executable, "-m", "pip", "install", package])
 
 
 if __name__ == '__main__':
@@ -24,7 +25,7 @@ if __name__ == '__main__':
     from sys import platform
 
     install(_all_)
-    if platform == 'windows':
+    if platform == 'win32':
         install(windows)
     if platform.startswith('linux'):
         install(linux)

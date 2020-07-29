@@ -11,7 +11,8 @@ from src import spotify_config
 from src.util import *
 import sys
 
-IS_WINDOWS = sys.platform == 'windows'
+
+IS_WINDOWS = sys.platform == 'win32'
 if IS_WINDOWS:
     from win10toast import ToastNotifier
     NOTIFIER = ToastNotifier()
