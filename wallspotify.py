@@ -66,8 +66,11 @@ class Application(QApplication):
             # Get token from cache
             token_info = self.sp_oauth.get_cached_token()
             if not token_info:
-                show_notification('Not Logged In',
-                                  'Right-Click the WallSpotify icon to login to your Spotify account.')
+                if IS_WINDOWS:
+                    text = 'Find the WallSpotify icon in your tray to log into your Spotify account.'
+                else:
+                    text = 'Click the WallSpotify icon to log into your Spotify account.'
+                show_notification('Not Logged In', text)
                 return
 
         # Login with token
