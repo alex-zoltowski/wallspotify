@@ -12,10 +12,14 @@ client_id = 'YOUR SPOTIFY CLIENT_ID'
 client_secret = 'YOUR SPOTIFY CLIENT_SECRET'
 redirect_uri = 'YOUR SPOTIFY REDIRECT_URI'
 ```
-## Build Executable
 
-`python build_executable.py`
+## Other
+- Run the program with `python wallspotify.py`
+- Build an executable `python build_executable.py`
+- Executables are placed in `dist/`
 
-Executables are placed in `dist/`
+## Windows Only
+- After building and running a .exe, it will add a Registry Key to enable running the app on start up.
+- You can remove this key by running `python remove_reg_key.py`
 
 
