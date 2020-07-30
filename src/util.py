@@ -18,20 +18,18 @@ class ChangeWallpaperThread(Thread):
     for the 'Toggle Wallpaper to Current Song Art' option
     """
 
-    def __init__(self):
+    def __init__(self, spotify, path):
         Thread.__init__(self)
         self.running = False
-        self.spotify = None
-        self.path = None
+        self.spotify = spotify
+        self.path = path
 
     def stop(self):
         self.running = False
-        print('Stopped - Current Song')
 
     def start(self):
         self.running = True
         Thread.start(self)
-        print('Started - Current Song')
 
     def _smart_sleep(self, seconds):
         """this is used to prevent the thread from hanging after trying to stop it"""
@@ -42,11 +40,7 @@ class ChangeWallpaperThread(Thread):
                 break
 
     def run(self):
-        """
-        runs until the user stops this action
-
-        this thread handles checking for new songs
-        """
+        """when a thread is created it runs this function"""
 
         # used to save the previous image url
         previous_song = ''
@@ -148,8 +142,6 @@ def choose_color_algo(colors):
     max_dist = 0
     total_freq = sum([freq for freq, _ in cand_cols])
 
-    # im = Image.new('RGB', (1000, 300), (0, 0, 0))
-
     j = 0
     for _, cand_col in cand_cols:
 
@@ -167,11 +159,7 @@ def choose_color_algo(colors):
             max_col = cand_col
             max_dist = dist
 
-        # im.paste(Image.new('RGB', (int(1000 / num_cands), 200), cand_col), (int(1000 / num_cands) * j, 0))
         j += 1
-
-    # im.paste(Image.new('RGB', (1000, 100), max_col), (0, 200))
-    # im.show()
 
     return max_col
 
@@ -182,8 +170,6 @@ def login(token_info):
     try:
         spotify = Spotify(auth=token_info['access_token'])
     except:
-        # todo: add message box saying couldn't connect to spotify
-        print('could not connect to Spotify with given token, exiting...')
         return None
 
     return spotify
@@ -239,19 +225,16 @@ def get_current_song_image_url(spotify):
     try:
         current_song = spotify.current_user_playing_track()
     except:
-        print('failed current song request')
         return None
 
     # check if the data is there
     if current_song is None:
-        print('no song info found, no song playing?')
         return None
 
     # get the url of the album art image
     try:
         url = current_song['item']['album']['images'][0]['url']
     except:
-        print('could not find url in the spotify data')
         return None
 
     return url
@@ -271,7 +254,6 @@ def create_colored_background(img):
     try:
         bg_img = Image.new('RGB', (1920, 1080), bg_col)
     except:
-        print('failed to create bg image')
         return None
 
     return bg_img
@@ -294,11 +276,10 @@ def create_wallpaper_image(bg_img, img, path):
     offset = ((bg_w - img_w) // 2, (bg_h - img_h) // 2)
     bg_img.paste(img, offset)
 
-    # save the image to the unique filename
+    # save the image to a given path
     try:
         bg_img.save(path)
     except:
-        print('could not save finished image')
         return False
 
     return True
@@ -318,14 +299,12 @@ def download_image(url):
         with urlopen(url, context=context) as response:
             data = response.read()
     except:
-        print('failed to download image')
         return None
 
     # create PIL image from image data
     try:
         img = Image.open(BytesIO(data)).convert('RGB')
     except:
-        print('could not create PIL image from downloaded data')
         return None
 
     return img
@@ -349,7 +328,6 @@ def set_wallpaper_image(path):
 
             app('Finder').desktop_picture.set(mactypes.File(path))
     except:
-        print('could not set bg image')
         return False
 
     return True

@@ -10,8 +10,6 @@ _all_ = [
 
 windows = ["win10toast>=0.9"]
 
-linux = []
-
 darwin = ["appscript>=1.1.0"]
 
 
@@ -21,13 +19,9 @@ def install(packages):
 
 
 if __name__ == '__main__':
-
-    from sys import platform
-
     install(_all_)
-    if platform == 'win32':
+
+    if sys.platform == 'win32':
         install(windows)
-    if platform.startswith('linux'):
-        install(linux)
-    if platform == 'darwin':
+    else:
         install(darwin)

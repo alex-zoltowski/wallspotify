@@ -24,11 +24,7 @@ class Menu(QMenu):
         self.addAction(self.toggle_wallpaper_action)
 
     def setup_login_info_action(self):
-        """sets up the Login option"""
-
         self.addAction(self.login_info_action)
 
     def setup_quit_action(self):
-        """sets up the quit option"""
-
         self.addAction(self.quit_action)

@@ -60,15 +60,14 @@ class Application(QApplication):
             try:
                 token_info = self.sp_oauth.get_access_token(code)
             except SpotifyOauthError:
-                self._notify_bad_link()
-                print('could not get access token from Spotify')
+                notify_bad_link()
                 return
         else:
             # Get token from cache
             token_info = self.sp_oauth.get_cached_token()
             if not token_info:
-                self._show_notification('Not Logged In',
-                                        'Right-Click the WallSpotify icon to login to your Spotify account.')
+                show_notification('Not Logged In',
+                                  'Right-Click the WallSpotify icon to login to your Spotify account.')
                 return
 
         # Login with token
@@ -76,14 +75,15 @@ class Application(QApplication):
 
         if self.spotify:
             self._update_login_ui()
-            self._show_notification('Login Success', 'You can now use WallSpotify.')
+            show_notification('Login Success', 'You can now use WallSpotify.')
         else:
-            self._show_notification('Login Failed',
-                                    'Something went wrong, try logging in again.')
-            print('login with token failed')
+            show_notification('Login Failed',
+                              'Something went wrong, try logging in again.')
 
     def _update_login_ui(self):
         """changes tray UI to reflect a successful login"""
+
+        # Call to Spotify for user account info
         try:
             current_user_info = self.spotify.me()
         except Exception as e:
@@ -109,24 +109,24 @@ class Application(QApplication):
         # get the contents of the text field
         text = self.confirm_account_window.form_widget.text_field.text()
 
+        is_valid = True
         # check if text is a valid url
         if match(regex, text):
             code = self.sp_oauth.parse_response_code(text)
 
             if not code:
-                self._notify_bad_link()
-                print('could not parse response code')
-                return
+                is_valid = False
         else:
-            self._notify_bad_link()
-            print('invalid url')
-            return
+            is_valid = False
 
-        # Close text field
         self.confirm_account_window.hide()
+        self.confirm_account_window.form_widget.text_field.setText('')
 
-        # Attempt login using code
-        self._attempt_login(code)
+        if is_valid:
+            # Attempt login using code
+            self._attempt_login(code)
+        else:
+            notify_bad_link()
 
     def _on_login_button(self):
         """tries to open users web browser to prompt Spotify login, also shows window for callback url"""
@@ -166,26 +166,28 @@ class Application(QApplication):
     def _start_new_thread(self):
         """creates new thread object and starts it"""
 
-        self.wallpaper_thread = ChangeWallpaperThread()
-        self.wallpaper_thread.spotify = self.spotify
-        self.wallpaper_thread.path = FOLDER_PATH
+        self.wallpaper_thread = ChangeWallpaperThread(self.spotify, FOLDER_PATH)
         self.wallpaper_thread.start()
 
-    def _show_notification(self, title, body):
-        if IS_WINDOWS:
-            NOTIFIER.show_toast(title,
-                                body,
-                                icon_path=resource_path(join('assets', 'icon.ico')),
-                                duration=4,
-                                threaded=True)
-        else:
-            system("""
-                          osascript -e 'display notification "{}" with title "{}"'
-                          """.format(body, title))
 
-    def _notify_bad_link(self):
-        self._show_notification('Login Failed',
-                                'Something is wrong with the link, be sure to copy and paste the entire link.')
+def show_notification(title, body):
+    """shows a notification based on the OS"""
+
+    if IS_WINDOWS:
+        NOTIFIER.show_toast(title,
+                            body,
+                            icon_path=resource_path(join('assets', 'icon.ico')),
+                            duration=4,
+                            threaded=True)
+    else:
+        system("""
+                        osascript -e 'display notification "{}" with title "{}"'
+                        """.format(body, title))
+
+
+def notify_bad_link():
+    show_notification('Login Failed',
+                      'Something is wrong with the link, be sure to copy and paste the entire link.')
 
 
 def main():

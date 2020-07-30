@@ -15,15 +15,17 @@ class ConfirmAccountWindow(QMainWindow):
 
 
 class ConfirmAccountWidget(QWidget):
-    """this class sets up the design for the confirm account window"""
+    """this class sets up the UI for the confirm account window"""
 
     def __init__(self, parent):
         super(ConfirmAccountWidget, self).__init__(parent)
-        self.layout = QVBoxLayout(self)
-        label_text = 'Paste the link from the web browser after logging into spotify\n(should be a google url):'
-        self.layout.addWidget(QLabel(label_text))
         self.text_field = QLineEdit()
-        self.layout.addWidget(self.text_field)
         self.button = QPushButton('Confirm Account')
+
+        label_text = 'Paste the link from the web browser after logging into spotify\n(should be a google url):'
+        self.layout = QVBoxLayout(self)
+        self.layout.addWidget(QLabel(label_text))
+        self.layout.addWidget(self.text_field)
         self.layout.addWidget(self.button)
+
         self.setLayout(self.layout)
