@@ -1,6 +1,12 @@
 # WallSpotify
 Desktop application that dynamically sets the desktop wallpaper image to the album art of your currently playing Spotify song.
 
+## Releases
+
+[Download for Windows](WallSpotify.exe)
+
+[Download for MacOS](WallSpotify-MacOS.zip) 
+
 ## Requirements
 - Python 3.8+
 - Install dependencies using `python install.py`
