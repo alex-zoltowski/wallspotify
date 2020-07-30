@@ -7,7 +7,7 @@ Desktop application that dynamically sets the desktop wallpaper image to the alb
 
 [Download for MacOS](WallSpotify-MacOS.zip) 
 
-## Requirements
+## Usage
 - Python 3.8+
 - Install dependencies using `python install.py`
 - Spotify Developer App (Create one by logging into the Spotify Developer Dashboard)
