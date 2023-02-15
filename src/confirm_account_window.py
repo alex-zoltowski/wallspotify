@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton
-from src.util import resource_path
+from src.functions import resource_path
 from os.path import join
 from PyQt5.QtGui import QIcon
 

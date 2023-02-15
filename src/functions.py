@@ -6,59 +6,7 @@ from ssl import _create_unverified_context
 from urllib.request import urlopen
 from io import BytesIO
 from PIL import Image
-from time import sleep
-from threading import Thread
-from datetime import datetime
 import sys
-
-
-class ChangeWallpaperThread(Thread):
-    """
-    this class defines the behavior for the thread that is created
-    for the 'Toggle Wallpaper to Current Song Art' option
-    """
-
-    def __init__(self, spotify, path):
-        Thread.__init__(self)
-        self.running = False
-        self.spotify = spotify
-        self.path = path
-
-    def stop(self):
-        self.running = False
-
-    def start(self):
-        self.running = True
-        Thread.start(self)
-
-    def _smart_sleep(self, seconds):
-        """this is used to prevent the thread from hanging after trying to stop it"""
-
-        for _ in range(seconds):
-            sleep(1)
-            if not self.running:
-                break
-
-    def run(self):
-        """when a thread is created it runs this function"""
-
-        # used to save the previous image url
-        previous_song = ''
-
-        while self.running:
-            # get unique filename
-            file_name = datetime.now().strftime('%Y%m%d%H%M%S') + '.jpeg'
-            file_path = join(self.path, file_name)
-
-            # try to update wallpaper
-            song_url = change_wallpaper(previous_song, self.spotify, file_path)
-
-            # check for new song, save to previous_song
-            if song_url:
-                previous_song = song_url
-                delete_old_jpegs(self.path, file_name)
-
-            self._smart_sleep(5)
 
 
 def resource_path(relative_path):
@@ -76,12 +24,12 @@ def resource_path(relative_path):
     return join(base_path, relative_path)
 
 
-def handle_windows_reg_key():
+def create_windows_reg_key():
     """
     Attempts to add this app to the list of apps that launch at startup
 
     checks for value in registry, creates one if it doesn't exist
-    will update key with new location of .exe if it was moved
+    updates key with new location of the .exe if it was moved
     """
 
     from winreg import OpenKey, CloseKey, QueryValueEx, SetValueEx, ConnectRegistry, \
@@ -180,7 +128,7 @@ def change_wallpaper(previous_song, spotify, path):
     driver for all methods needed to download the new image and set as wallpaper
 
         returns url
-                None on failure, AND when the song is the same as previous_song
+                None on failure, or when the song is the same as previous_song
     """
 
     # get the image url of the currently playing song

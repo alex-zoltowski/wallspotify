@@ -1,13 +1,13 @@
 from lyricsgenius import Genius
 from spotipy import Spotify
 from spotipy.oauth2 import SpotifyClientCredentials
-from src import spotify_config
+from src.spotify_config import client_id, client_secret, lyricgenius_access_code
 
 
-client_credentials_manager = SpotifyClientCredentials(spotify_config.client_id, spotify_config.client_secret)
+client_credentials_manager = SpotifyClientCredentials(client_id, client_secret)
 sp = Spotify(client_credentials_manager=client_credentials_manager)
 
-genius = Genius(spotify_config.lyricgenius_access_code)
+genius = Genius(lyricgenius_access_code)
 
 song_name = input("Enter the name of the song: ")
 artist_name = input("Enter the name of the artist: ")
