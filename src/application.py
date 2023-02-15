@@ -59,7 +59,7 @@ class Application(QApplication):
             try:
                 token_info = self.sp_oauth.get_access_token(code)
             except SpotifyOauthError:
-                self.notify_bad_link()
+                self._notify_bad_link()
                 return
         else:
             # Get token from cache
@@ -69,7 +69,7 @@ class Application(QApplication):
                     text = 'Find the WallSpotify icon in your tray to log into your Spotify account.'
                 else:
                     text = 'Click the WallSpotify icon to log into your Spotify account.'
-                self.show_notification('Not Logged In', text)
+                self._show_notification('Not Logged In', text)
                 return
 
         # Login with token
