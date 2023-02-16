@@ -5,12 +5,10 @@ from src.functions import cleanup_mei, create_windows_reg_key, set_wallpaper_ima
 import sys
 
 
-def main():
-    is_windows = sys.platform == 'win32'
+is_windows = sys.platform == 'win32'
+folder_path = join(expanduser('~'), '.wallspotify')
 
-    # Path to hidden wallspotify folder within the users home folder
-    folder_path = join(expanduser('~'), '.wallspotify')
-
+if __name__ == '__main__':
     # Check if program is running as an executable
     if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
         # Delete any previous temp folders created from the executable
@@ -30,11 +28,7 @@ def main():
     else:
         # Create the hidden wallspotify folder
         makedirs(folder_path)
-
+    
     # Create and start application
     app = Application(folder_path, is_windows)
     app.exec_()
-
-
-if __name__ == '__main__':
-    main()

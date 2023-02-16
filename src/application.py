@@ -19,10 +19,6 @@ class Application(QApplication):
         self.folder_path = folder_path
         self.is_windows = is_windows
 
-        if self.is_windows:
-            from win10toast import ToastNotifier
-            self.notifier = ToastNotifier()
-
         self.setQuitOnLastWindowClosed(False)
 
         # Create ouath object to handle cached token data
@@ -176,11 +172,19 @@ class Application(QApplication):
         """shows a notification based on the OS"""
 
         if self.is_windows:
-            self.notifier.show_toast(title,
+            from winotify import Notification
+
+            toast = Notification(app_id="WallSpotify",
+                                 title=title,
+                                 msg=body,
+                                 icon=resource_path(join('assets', 'icon.ico')))
+            
+            toast.show()
+            '''self.notifier.show_toast(title,
                                 body,
                                 icon_path=resource_path(join('assets', 'icon.ico')),
                                 duration=4,
-                                threaded=True)
+                                threaded=True)'''
         else:
             system("""
                             osascript -e 'display notification "{}" with title "{}"'

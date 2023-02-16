@@ -10,7 +10,7 @@ _all_ = [
     "lyricsgenius>=3.0.1"
 ]
 
-windows = ["win10toast>=0.9"]
+windows = ["winotify>=1.1.0"]
 
 darwin = ["appscript>=1.1.0"]
 
@@ -19,11 +19,12 @@ def install(packages):
         subprocess.check_call([sys.executable, "-m", "pip", "install", package])
 
 if __name__ == '__main__':
-    install(_all_)
-
     if sys.platform == 'win32':
         install(windows)
     elif sys.platform == 'darwin':
         install(darwin) 
     else:
         print("wallspotify does not support this operation system")
+        exit()
+
+    install(_all_)
