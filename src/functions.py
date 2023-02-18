@@ -11,6 +11,7 @@ import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 from lyricsgenius import Genius
 from src.spotify_config import client_id, client_secret, lyricgenius_access_code
+import textwrap
 
 scope = "user-read-playback-state"
 
@@ -154,9 +155,14 @@ def change_wallpaper(previous_song, spotify, path):
 
     # get the lyrics of the currently playing song
     lyric = get_current_song_lyrics(spotify)
+    
+    lyric_ = str(lyric)
+    lyric_ = lyric_.encode("utf-8")
+    
+    
 
     # create the solid colored 1920x1080 background image
-    bg_img = create_colored_background(img,lyric)
+    bg_img = create_colored_background(img,lyric_)
     if not bg_img:
         return None
 
@@ -165,7 +171,7 @@ def change_wallpaper(previous_song, spotify, path):
     
 
     # create the full desktop image
-    if not create_wallpaper_image(bg_img, img, lyric, path):
+    if not create_wallpaper_image(bg_img, img, path):
         return None
 
     # set the new image as the desktop wallpaper
@@ -223,7 +229,7 @@ def get_current_song_image_url(spotify):
     return url
 
 
-def create_colored_background(img,lyric):
+def create_colored_background(img,lyric_):
     """
     creates a 1920x1080 image with the most frequently used color in img.
 
@@ -239,15 +245,21 @@ def create_colored_background(img,lyric):
     except:
         return None
     ##############################################
-    #draw = ImageDraw.Draw(bg_img)
-    #font = ImageFont.truetype(r'C:\Users\chris\Desktop\code\collab\wallspotify\assets\fonts\Apple\AppleGaramond-Light.ttf', 15)
-    #draw.text((0, 0), lyric)
+    draw = ImageDraw.Draw(bg_img)
+    #font = ImageFont.truetype("Calibri.ttf", 15, encoding = 'utf-8')
+    
+   # my_wrap = textwrap.TextWrapper(width = 40)
+    #lyric_list = my_wrap.wrap(text=lyric_)
+    lyric_ =str(lyric_)
+    draw.multiline_text((0, 0), lyric_, align= "left")
+    
+    
     ################################################
 
     return bg_img
 
 
-def create_wallpaper_image(bg_img, img, lyric, path):
+def create_wallpaper_image(bg_img, img, path):
     """
     combines the colored bg_img with the img downloaded from spotify then
     saves the image file
