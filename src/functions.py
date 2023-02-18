@@ -131,7 +131,7 @@ def login(token_info):
     return spotify
 
 
-def change_wallpaper(previous_song, spotify, path):
+def change_wallpaper(prev_song_data, spotify, path):
     """
     driver for all methods needed to download the new image and set as wallpaper
 
@@ -140,35 +140,37 @@ def change_wallpaper(previous_song, spotify, path):
     """
 
     # get the image url of the currently playing song
-    url = get_current_song_image_url(spotify)
-    if not url:
+    current_song_data = get_current_song_data(spotify)
+    if not current_song_data:
         return None
 
-    # check if the same song is still playing
-    if previous_song == url:
+    try:
+        current_song_name = current_song_data['item']['name']
+        current_song_artist = current_song_data['item']['artists'][0]['name']
+        image_url = current_song_data['item']['album']['images'][0]['url']
+    except:
         return None
+
+    if prev_song_data:
+        prev_song_name = prev_song_data['item']['name']
+        prev_song_artist = prev_song_data['item']['artists'][0]['name']
+
+        # check if the same song is still playing
+        if (prev_song_name == current_song_name and prev_song_artist == current_song_artist):
+            return None
 
     # download the image from spotify
-    img = download_image(url)
+    img = download_image(image_url)
     if not img:
         return None
 
     # get the lyrics of the currently playing song
-    lyric = get_current_song_lyrics(spotify)
+    lyrics = get_current_song_lyrics(current_song_data)
     
-    lyric_ = str(lyric)
-    lyric_ = lyric_.encode("utf-8")
-    
-    
-
     # create the solid colored 1920x1080 background image
-    bg_img = create_colored_background(img,lyric_)
+    bg_img = create_colored_background(img, lyrics)
     if not bg_img:
         return None
-
-    
-    
-    
 
     # create the full desktop image
     if not create_wallpaper_image(bg_img, img, path):
@@ -178,30 +180,22 @@ def change_wallpaper(previous_song, spotify, path):
     if not set_wallpaper_image(path):
         return None
 
-    return url
+    return current_song_data
 
 
-def get_current_song_lyrics(spotify):
-
-    # call to spotify for current song info
-    current_song = spotify.current_user_playing_track()
-    #print(current_song) #test
+def get_current_song_lyrics(current_song):
     song_name = current_song['item']['name']
     song_artist = current_song['item']['artists'][0]['name']
 
-    print(song_artist) #test
-    print(song_name) #test
-    lyric = genius.search_song(song_name,song_artist)
-    #print(lyric.lyrics)
+    lyrics_data = genius.search_song(song_name, song_artist)
 
-    if lyric:
-        print(lyric.lyrics)
-    else:
+    if not lyrics_data:
         print("No lyrics found for {} by {}".format(song_name, song_artist))
         return
-    return lyric
 
-def get_current_song_image_url(spotify):
+    return lyrics_data.lyrics
+
+def get_current_song_data(spotify):
     """
     get user's current song image url from spotify
 
@@ -212,7 +206,6 @@ def get_current_song_image_url(spotify):
     # call to spotify for current song info
     try:
         current_song = spotify.current_user_playing_track()
-        #print(current_song) #test
     except:
         return None
 
@@ -220,16 +213,10 @@ def get_current_song_image_url(spotify):
     if current_song is None:
         return None
 
-    # get the url of the album art image
-    try:
-        url = current_song['item']['album']['images'][0]['url']
-    except:
-        return None
-
-    return url
+    return current_song
 
 
-def create_colored_background(img,lyric_):
+def create_colored_background(img, lyrics):
     """
     creates a 1920x1080 image with the most frequently used color in img.
 
@@ -244,14 +231,16 @@ def create_colored_background(img,lyric_):
         bg_img = Image.new('RGB', (1920, 1080), bg_col)
     except:
         return None
+
     ##############################################
     draw = ImageDraw.Draw(bg_img)
+    font = ImageFont.truetype("assets/fonts/Apple/AppleGaramond.ttf", 14)
+    draw.text((0, 0), lyrics, align="left", font=font)
     #font = ImageFont.truetype("Calibri.ttf", 15, encoding = 'utf-8')
-    
-   # my_wrap = textwrap.TextWrapper(width = 40)
+    #my_wrap = textwrap.TextWrapper(width = 40)
     #lyric_list = my_wrap.wrap(text=lyric_)
-    lyric_ =str(lyric_)
-    draw.multiline_text((0, 0), lyric_, align= "left")
+    #lyric_ =str(lyric_)
+    #draw.multiline_text((0, 0), lyric_, align= "left")
     
     
     ################################################

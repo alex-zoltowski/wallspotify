@@ -36,7 +36,7 @@ class ChangeWallpaperThread(Thread):
         """when a thread is created it runs this function"""
 
         # used to save the previous image url
-        previous_song = ''
+        prev_song_data = None
 
         while self.running:
             # get unique filename
@@ -44,11 +44,11 @@ class ChangeWallpaperThread(Thread):
             file_path = join(self.path, file_name)
 
             # try to update wallpaper
-            song_url = change_wallpaper(previous_song, self.spotify, file_path)
+            current_song_data = change_wallpaper(prev_song_data, self.spotify, file_path)
 
             # check for new song, save to previous_song
-            if song_url:
-                previous_song = song_url
+            if current_song_data:
+                prev_song_data = current_song_data
                 delete_old_jpegs(self.path, file_name)
 
             self._smart_sleep(5)
