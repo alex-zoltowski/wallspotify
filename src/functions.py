@@ -5,9 +5,16 @@ from src.spotify import Spotify
 from ssl import _create_unverified_context
 from urllib.request import urlopen
 from io import BytesIO
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 import sys
+import spotipy
+from spotipy.oauth2 import SpotifyOAuth
+from lyricsgenius import Genius
+from src.spotify_config import client_id, client_secret, lyricgenius_access_code
 
+scope = "user-read-playback-state"
+
+genius = Genius(lyricgenius_access_code)
 
 def resource_path(relative_path):
     """
@@ -145,13 +152,20 @@ def change_wallpaper(previous_song, spotify, path):
     if not img:
         return None
 
+    # get the lyrics of the currently playing song
+    lyric = get_current_song_lyrics(spotify)
+
     # create the solid colored 1920x1080 background image
-    bg_img = create_colored_background(img)
+    bg_img = create_colored_background(img,lyric)
     if not bg_img:
         return None
 
+    
+    
+    
+
     # create the full desktop image
-    if not create_wallpaper_image(bg_img, img, path):
+    if not create_wallpaper_image(bg_img, img, lyric, path):
         return None
 
     # set the new image as the desktop wallpaper
@@ -160,6 +174,26 @@ def change_wallpaper(previous_song, spotify, path):
 
     return url
 
+
+def get_current_song_lyrics(spotify):
+
+    # call to spotify for current song info
+    current_song = spotify.current_user_playing_track()
+    #print(current_song) #test
+    song_name = current_song['item']['name']
+    song_artist = current_song['item']['artists'][0]['name']
+
+    print(song_artist) #test
+    print(song_name) #test
+    lyric = genius.search_song(song_name,song_artist)
+    #print(lyric.lyrics)
+
+    if lyric:
+        print(lyric.lyrics)
+    else:
+        print("No lyrics found for {} by {}".format(song_name, song_artist))
+        return
+    return lyric
 
 def get_current_song_image_url(spotify):
     """
@@ -172,6 +206,7 @@ def get_current_song_image_url(spotify):
     # call to spotify for current song info
     try:
         current_song = spotify.current_user_playing_track()
+        #print(current_song) #test
     except:
         return None
 
@@ -188,7 +223,7 @@ def get_current_song_image_url(spotify):
     return url
 
 
-def create_colored_background(img):
+def create_colored_background(img,lyric):
     """
     creates a 1920x1080 image with the most frequently used color in img.
 
@@ -203,11 +238,16 @@ def create_colored_background(img):
         bg_img = Image.new('RGB', (1920, 1080), bg_col)
     except:
         return None
+    ##############################################
+    #draw = ImageDraw.Draw(bg_img)
+    #font = ImageFont.truetype(r'C:\Users\chris\Desktop\code\collab\wallspotify\assets\fonts\Apple\AppleGaramond-Light.ttf', 15)
+    #draw.text((0, 0), lyric)
+    ################################################
 
     return bg_img
 
 
-def create_wallpaper_image(bg_img, img, path):
+def create_wallpaper_image(bg_img, img, lyric, path):
     """
     combines the colored bg_img with the img downloaded from spotify then
     saves the image file
@@ -222,6 +262,11 @@ def create_wallpaper_image(bg_img, img, path):
 
     # create offset to paste img in the middle of bg_img
     offset = ((bg_w - img_w) // 2, (bg_h - img_h) // 2)
+    ##############################################
+    #draw = ImageDraw.Draw(bg_img)
+    #font = ImageFont.truetype("arial.pil", 14)
+    #draw.text((0, 0), lyric, font=font, fill=(255, 255, 255))
+    ################################################
     bg_img.paste(img, offset)
 
     # save the image to a given path
