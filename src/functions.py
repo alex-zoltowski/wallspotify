@@ -168,7 +168,7 @@ def change_wallpaper(prev_song_data, spotify, path):
     lyrics = get_current_song_lyrics(current_song_data)
     
     # create the solid colored 1920x1080 background image
-    bg_img = create_colored_background(img, lyrics)
+    bg_img = create_colored_background(img, lyrics, current_song_data)
     if not bg_img:
         return None
 
@@ -178,7 +178,7 @@ def change_wallpaper(prev_song_data, spotify, path):
 
     # set the new image as the desktop wallpaper
     if not set_wallpaper_image(path):
-        return None
+        return 
 
     return current_song_data
 
@@ -191,8 +191,9 @@ def get_current_song_lyrics(current_song):
 
     if not lyrics_data:
         print("No lyrics found for {} by {}".format(song_name, song_artist))
-        return
+        return "No lyrics found for '{}'  by {}".format(song_name, song_artist)
 
+   
     return lyrics_data.lyrics
 
 def get_current_song_data(spotify):
@@ -216,14 +217,15 @@ def get_current_song_data(spotify):
     return current_song
 
 
-def create_colored_background(img, lyrics):
+def create_colored_background(img, lyrics, current_song):
     """
     creates a 1920x1080 image with the most frequently used color in img.
 
     returns PIL Image
             None on failure
     """
-
+    song_name = current_song['item']['name']
+    song_artist = current_song['item']['artists'][0]['name']
     bg_col = choose_color_algo(img.getcolors(maxcolors=409601))
 
     # create the image using the chosen color
@@ -235,7 +237,10 @@ def create_colored_background(img, lyrics):
     ##############################################
     draw = ImageDraw.Draw(bg_img)
     font = ImageFont.truetype("assets/fonts/Apple/AppleGaramond.ttf", 14)
-    draw.text((0, 0), lyrics, align="left", font=font)
+    
+   
+    draw.text((5,0),"'{}' by {}".format(song_name, song_artist), align="left", font=font)
+    draw.text((5, 20), lyrics, align="left", font=font)
     #font = ImageFont.truetype("Calibri.ttf", 15, encoding = 'utf-8')
     #my_wrap = textwrap.TextWrapper(width = 40)
     #lyric_list = my_wrap.wrap(text=lyric_)
